@@ -1,11 +1,11 @@
 import { cn } from "../lib/utils";
 
-type variant = "default" | "red" | "blue" | "green" | "black" | "white";
+export type LabelVariant = "default" | "red" | "blue" | "green" | "black" | "white";
 type size = "xs" | "sm" | "md";
 
 interface LabelProps {
     label: string;
-    variant?: variant;
+    variant?: LabelVariant;
     size?: size;
     className?: string;
     leftIcon?: React.ReactNode;
@@ -18,7 +18,7 @@ const sizeClasses: Record<size, string> = {
     md: "px-3 py-2 text-sm",
 };
 
-const variantClasses: Record<variant, string> = {
+const variantClasses: Record<LabelVariant, string> = {
     default: "bg-gray1 text-black",
     red: "bg-sub2/20 text-red-400",
     blue: "bg-sub3/30 text-blue-500",
