@@ -4,14 +4,18 @@ import { useState } from "react";
 import Image from "next/image";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface SignupFormProps {
     isVisible: boolean;
 }
 
 export default function SignupForm({ isVisible }: SignupFormProps) {
+    const router = useRouter();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [isEmailCheck, setIsEmailCheck] = useState(false);
     const [password, setPassword] = useState("");
     const [passwordCheck, setPasswordCheck] = useState("");
     const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -19,29 +23,31 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await fetch("http://52.79.145.137/api/auth/signup", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name,
-                    email,
-                    password,
-                    passwordCheck,
-                }),
-            });
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/signup`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password,
+                        passwordCheck,
+                    }),
+                }
+            );
 
-            const data = await res.json();
-            console.log("회원가입 결과?" + data);
-
-            if (res.status === 201) {
-                console.log("회원가입 성공");
-            }
-            if (res.status === 400) {
-                console.log("비밀번호 확인", data);
+            if (res.status === 200) {
+                toast.success("회원가입이 완료됐습니다");
+                router.replace("/login");
+            } else if (res.status === 400) {
+                toast.error(
+                    "비밀번호는 14자 + 대문자와 특수문자를 각 1개 이상 포함시켜주세요"
+                );
             } else {
-                console.log("회원가입 실패");
+                toast.error("회원가입에 실패하였습니다");
             }
         } catch (error) {
             console.error(error);
@@ -53,22 +59,37 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
     };
 
     const handleEmailCheck = async () => {
+        const emailPattern =
+            /^[A-Za-z0-9_\.\-]+@[A-Za-z0-9\-]+\.[A-za-z0-9\-]+/;
+        setIsEmailCheck(false);
+        if (!email) {
+            toast.error("이메일을 입력해주세요");
+            return;
+        }
+        if (emailPattern.test(email) === false) {
+            toast.info("이메일 양식에 맞게 입력해주세요");
+            return;
+        }
 
         try {
             const res = await fetch(
-                `http://52.79.145.137/api/auth/check-email?email=${encodeURIComponent(
-                    email
-                )}`
+                `${
+                    process.env.NEXT_PUBLIC_API_BASE_URL
+                }/api/auth/check-email?email=${encodeURIComponent(email)}`
             );
-            const data = await res.json();
-            if (!res.ok) {
-                console.log("이미 사용중인 이메일");
+
+            const body = await res.json();
+            if (res.status === 400) {
+                toast.error(body.message);
             }
-            if (data.data.valid) {
-                console.log("확인됐습니다.");
+
+            if (res.status === 200) {
+                toast.success("사용 가능한 이메일입니다");
+                setIsEmailCheck(true);
             }
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.log(err);
+            toast.error("네트워크 오류가 발생했습니다");
         }
     };
 
@@ -99,7 +120,10 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
                                     type="text"
                                     placeholder="이메일을 입력하세요"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        setIsEmailCheck(false);
+                                    }}
                                     fullWidth
                                     required
                                 />
@@ -128,7 +152,7 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
                         <Input
                             label="비밀번호"
                             type="password"
-                            placeholder="비밀번호를 입력하세요"
+                            placeholder="비밀번호를 입력하세요(14자, 대문자 1개 이상 + 특수문자 1개 이상 포함)"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             fullWidth
@@ -183,7 +207,7 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
                             size="md"
                             fullWidth
                             className="mt-6"
-                            disabled={!agreedToTerms}
+                            disabled={!agreedToTerms || !isEmailCheck || !name || !password}
                         />
                     </form>
 

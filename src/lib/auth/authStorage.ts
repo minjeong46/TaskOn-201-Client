@@ -1,7 +1,6 @@
 const ACCESS_TOKEN_KEY = "accessToken";
 const USER_KEY = "user";
 
-// 로그인 성공 시 내려주는 값 정의
 export interface AuthUser {
     userId: number;
     email: string;
@@ -11,14 +10,14 @@ export interface AuthUser {
 
 // 토큰과 사용자 저장
 export function saveAuth(accessToken: string, user: AuthUser) {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return null;
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
 // 토큰 가져오기
 export function getAccessToken() {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return null;
     return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
@@ -36,7 +35,7 @@ export function getAuthUser(): AuthUser | null {
 
 // 로그아웃 시 지우기
 export function clearAuth() {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return null;
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
 }

@@ -4,46 +4,49 @@ import { useState } from "react";
 import Image from "next/image";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
-import { saveAuth } from "@/lib/authStorage";
+import { saveAuth } from "@/lib/auth/authStorage";
+import { toast } from "sonner";
+import { authFetch } from "@/lib/auth/authFetch";
+import { useRouter } from "next/navigation";
 
 interface LoginFormProps {
     isVisible: boolean;
 }
 
 export default function LoginForm({ isVisible }: LoginFormProps) {
+    const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await fetch("http://52.79.145.137/api/auth/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    email,
-                    password,
-                }),
-            });
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ email, password }),
+                }
+            );
 
             const body = await res.json();
 
-            if (!res.ok) {
-                console.log("실패");
-                return;
+            if (res.status === 400) {
+                toast.error("잘못된 요청입니다");
+            } else if (res.status === 401) {
+                toast.error("이메일 또는 비밀번호가 일치하지 않습니다");
+            } else if (res.status === 500) {
+                toast.error("네트워크 오류가 발생했습니다");
+            } else if (res.status === 200) {
+                const accessToken = body.data.accessToken;
+                const user = body.data.user;
+                saveAuth(accessToken, user);
+                router.replace("/");
             }
-
-            const accessToken = body.data.accessToken;
-            const user = body.data.user;
-
-            saveAuth(accessToken, user);
-
-            console.log("로그인 성공");
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
         }
     };
 
