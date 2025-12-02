@@ -4,10 +4,11 @@ import { useState } from "react";
 import Image from "next/image";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
-import { saveAuth } from "@/lib/auth/authStorage";
 import { toast } from "sonner";
-import { authFetch } from "@/lib/auth/authFetch";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
+import { ApiError, loginRequest } from "@/lib/auth/authApi";
+import { useMutation } from "@tanstack/react-query";
 
 interface LoginFormProps {
     isVisible: boolean;
@@ -15,39 +16,42 @@ interface LoginFormProps {
 
 export default function LoginForm({ isVisible }: LoginFormProps) {
     const router = useRouter();
+    const setAuth = useAuthStore((state) => state.setAuth);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
+    const loginMutation = useMutation({
+        mutationFn: loginRequest,
+        onSuccess: (data) => {
+            const { accessToken, user } = data.data;
+
+            setAuth(accessToken, user);
+            router.replace("/");
+        },
+        onError: (error: ApiError) => {
+            const status = error.status;
+
+            if (status === 400) {
+                toast.error("잘못된 요청입니다");
+            } else if (status === 401) {
+                toast.error("이메일 또는 비밀번호가 일치하지 않습니다");
+            } else if (status === 500) {
+                toast.error("네트워크 오류가 발생했습니다");
+            } else {
+                toast.error(error.message || "로그인 중 오류가 발생했습니다.");
+            }
+        },
+    });
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ email, password }),
-                }
-            );
 
-            const body = await res.json();
-
-            if (res.status === 400) {
-                toast.error("잘못된 요청입니다");
-            } else if (res.status === 401) {
-                toast.error("이메일 또는 비밀번호가 일치하지 않습니다");
-            } else if (res.status === 500) {
-                toast.error("네트워크 오류가 발생했습니다");
-            } else if (res.status === 200) {
-                const accessToken = body.data.accessToken;
-                const user = body.data.user;
-                saveAuth(accessToken, user);
-                router.replace("/");
-            }
-        } catch (err) {
-            console.error(err);
+        if (!email || !password) {
+            toast.error("이메일과 비밀번호를 입력해주세요.");
+            return;
         }
+
+        loginMutation.mutate({ email, password });
     };
 
     const handleKakaoLogin = () => {
@@ -95,11 +99,14 @@ export default function LoginForm({ isVisible }: LoginFormProps) {
 
                     <Button
                         type="submit"
-                        label="Sign In"
+                        label={`${
+                            loginMutation.isPending ? "Loading..." : "Sign In"
+                        }`}
                         variant="primary"
                         size="md"
                         fullWidth
                         className="mt-6"
+                        disabled={loginMutation.isPending}
                     />
                 </form>
 

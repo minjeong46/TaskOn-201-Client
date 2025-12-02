@@ -6,6 +6,8 @@ import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import { ApiError, checkEmailRequest, signupRequest } from "@/lib/auth/authApi";
 
 interface SignupFormProps {
     isVisible: boolean;
@@ -20,48 +22,67 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
     const [passwordCheck, setPasswordCheck] = useState("");
     const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/signup`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        name,
-                        email,
-                        password,
-                        passwordCheck,
-                    }),
-                }
-            );
-
-            if (res.status === 200) {
-                toast.success("회원가입이 완료됐습니다");
-                router.replace("/login");
-            } else if (res.status === 400) {
-                toast.error(
-                    "비밀번호는 14자 + 대문자와 특수문자를 각 1개 이상 포함시켜주세요"
-                );
+    const signupMutation = useMutation({
+        mutationFn: signupRequest,
+        onSuccess: () => {
+            toast.success("회원가입이 완료됐습니다, 로그인을 해주세요");
+            router.replace("/login");
+        },
+        onError: (error: ApiError) => {
+            const status = error.status;
+            if (status === 400) {
+                toast.error(error.message || "입력값 검증 실패하였습니다.");
             } else {
                 toast.error("회원가입에 실패하였습니다");
             }
-        } catch (error) {
-            console.error(error);
+        },
+    });
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const passwordPattern =
+            /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{14,}$/;
+        if (!isEmailCheck) {
+            toast.error("이메일 중복 확인 후 진행해주세요");
+            return;
         }
+        if (!passwordPattern.test(password)) {
+            toast.error(
+                "비밀번호는 14자 이상이며, 대문자/특수문자를 각각 필수로 1개 이상 포함해야 합니다"
+            );
+            return;
+        }
+
+        signupMutation.mutate({ name, email, password, passwordCheck });
     };
 
     const handleKakaoLogin = () => {
         console.log("Kakao Login");
     };
 
+    const emailCheckMutation = useMutation({
+        mutationFn: checkEmailRequest,
+        onSuccess: () => {
+            toast.success("사용 가능한 이메일입니다");
+            setIsEmailCheck(true);
+        },
+        onError: (error: ApiError) => {
+            const status = error.status;
+            if (status === 400) {
+                toast.error(error.message || "오류가 발생했습니다.");
+                setIsEmailCheck(false);
+            } else {
+                toast.error("네트워크 오류가 발생했습니다");
+            }
+        },
+    });
+
     const handleEmailCheck = async () => {
         const emailPattern =
             /^[A-Za-z0-9_\.\-]+@[A-Za-z0-9\-]+\.[A-za-z0-9\-]+/;
         setIsEmailCheck(false);
+
         if (!email) {
             toast.error("이메일을 입력해주세요");
             return;
@@ -71,26 +92,7 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
             return;
         }
 
-        try {
-            const res = await fetch(
-                `${
-                    process.env.NEXT_PUBLIC_API_BASE_URL
-                }/api/auth/check-email?email=${encodeURIComponent(email)}`
-            );
-
-            const body = await res.json();
-            if (res.status === 400) {
-                toast.error(body.message);
-            }
-
-            if (res.status === 200) {
-                toast.success("사용 가능한 이메일입니다");
-                setIsEmailCheck(true);
-            }
-        } catch (err) {
-            console.log(err);
-            toast.error("네트워크 오류가 발생했습니다");
-        }
+        emailCheckMutation.mutate(email);
     };
 
     return (
@@ -131,11 +133,16 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
                             <div className="pt-6">
                                 <Button
                                     type="button"
-                                    label="중복 확인"
+                                    label={
+                                        emailCheckMutation.isPending
+                                            ? "확인 중"
+                                            : "중복 확인"
+                                    }
                                     variant="primary"
                                     size="sm"
                                     onClick={handleEmailCheck}
                                     className="whitespace-nowrap"
+                                    disabled={emailCheckMutation.isPending}
                                 />
                             </div>
                         </div>
@@ -207,7 +214,11 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
                             size="md"
                             fullWidth
                             className="mt-6"
-                            disabled={!agreedToTerms || !isEmailCheck || !name || !password}
+                            disabled={
+                                !agreedToTerms ||
+                                !name ||
+                                !password
+                            }
                         />
                     </form>
 

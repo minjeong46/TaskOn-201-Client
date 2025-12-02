@@ -41,8 +41,10 @@ export async function authFetch(url: string, options: RequestInit = {}) {
         return res;
     } catch (err) {
         clearAuth();
-        console.error("토큰 재발급 실패", err);
-        return res;
+        if (typeof window !== "undefined") {
+            window.location.href = "/login";
+        }
+        return err;
     }
 }
 
@@ -60,6 +62,14 @@ export async function reissueAccessToken(): Promise<string> {
         method: "POST",
         credentials: "include",
     });
+
+    if (res.status === 401) {
+        clearAuth();
+        if (typeof window !== "undefined") {
+            window.location.href = "/login";
+        }
+        throw new Error("리프레시 토큰 만료");
+    }
 
     const body: ReissueResponse = await res.json();
 

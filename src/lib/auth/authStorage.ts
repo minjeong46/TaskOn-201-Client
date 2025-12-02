@@ -16,7 +16,7 @@ export function saveAuth(accessToken: string, user: AuthUser) {
 }
 
 // 토큰 가져오기
-export function getAccessToken() {
+export function getAccessToken(): string | null {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
@@ -27,7 +27,7 @@ export function getAuthUser(): AuthUser | null {
     const user = localStorage.getItem(USER_KEY);
     if (!user) return null;
     try {
-        return JSON.parse(user);
+        return JSON.parse(user) as AuthUser;
     } catch {
         return null;
     }

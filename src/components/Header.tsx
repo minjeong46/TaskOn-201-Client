@@ -1,15 +1,86 @@
-import Image from "next/image";
+"use client";
 
-const Header = () => {
+import { useAuthStore } from "@/store/useAuthStore";
+import Profile from "./Profile";
+import Image from "next/image";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import Button from "./Button";
+
+interface HeaderProps {
+    className?: string;
+}
+
+const Header = ({ className }: HeaderProps) => {
+    const { user, isAuthenticated, clearAuth } = useAuthStore();
+    const router = useRouter();
+
+    const logoutHandler = () => {
+        clearAuth();
+        router.replace("/");
+    };
+
     return (
-        <header className="w-full h-20 flex justify-between py-4 px-5 border-b border-gray-200 bg-white">
+        <header
+            className={cn(
+                "w-full h-20 flex justify-between items-center py-4 px-8 border-b border-gray-200 bg-white",
+                className
+            )}
+        >
             <div className="cursor-pointer">
-                <Image src="/logo.png" alt="TaskOn logo" width={120} height={50} />
+                <Image
+                    src="/logo.png"
+                    alt="TaskOn logo"
+                    width={130}
+                    height={50}
+                />
             </div>
-            <div className="flex gap-3 py-2 cursor-pointer">
-                {/* 사용자 프로필 */}
-                <div className="w-8 h-8 rounded-2xl bg-gray-200"></div>
-                <span className="flex flex-col justify-center text-main2">사용자1</span>
+            <div className="w-fit">
+                {isAuthenticated ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger className="flex gap-3 py-2 cursor-pointer items-center">
+                            {/* 사용자 프로필 */}
+                            {isAuthenticated &&
+                            user?.profileImageUrl !== null ? (
+                                <Profile
+                                    size="sm"
+                                    imageUrl={user?.profileImageUrl}
+                                />
+                            ) : (
+                                <Profile size="sm" />
+                            )}
+                            <span className="flex flex-col justify-center text-main2">
+                                {isAuthenticated ? user?.name : "로딩..."}
+                            </span>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="min-w-6" align="center">
+                            <DropdownMenuItem>
+                                <Link href={"/mypage"}>MyPage</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                className="pl-1.5 cursor-pointer"
+                                onClick={logoutHandler}
+                            >
+                                Logout
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : (
+                    <Link href={"/login"}>
+                        <Button
+                            label="로그인"
+                            variant="white"
+                            className="px-4 text-lg font-bold"
+                        />
+                    </Link>
+                )}
             </div>
         </header>
     );

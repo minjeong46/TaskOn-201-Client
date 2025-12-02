@@ -12,8 +12,9 @@ export default function LayoutWrapper({
 }) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isIndexPage = pathname === "/"
 
-  if (isAuthPage) {
+  if (isAuthPage || isIndexPage) {
     return <>{children}</>;
   }
 
