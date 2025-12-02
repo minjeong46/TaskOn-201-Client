@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { BaseModalProps } from "./type";
+import { createPortal } from "react-dom";
 
 export default function BaseModal({
   isOpen,
@@ -50,7 +51,7 @@ export default function BaseModal({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={handleOverlayClick}
@@ -66,6 +67,6 @@ export default function BaseModal({
       >
         {children}
       </div>
-    </div>
+    </div>, document.body
   );
 }

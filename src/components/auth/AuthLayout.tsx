@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
+import { Toaster } from "../ui/sonner";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -179,6 +180,7 @@ function AuthOverlayContent({
       >
         {buttonLabel}
       </button>
+      <Toaster richColors position="top-center" />
     </div>
   );
 }
