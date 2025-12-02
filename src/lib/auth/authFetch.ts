@@ -44,7 +44,7 @@ export async function authFetch(url: string, options: RequestInit = {}) {
         if (typeof window !== "undefined") {
             window.location.href = "/login";
         }
-        return err;
+        throw err;
     }
 }
 

@@ -1,3 +1,4 @@
+import { authFetch } from "./authFetch";
 import { AuthUser } from "./authStorage";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -103,3 +104,10 @@ export async function checkEmailRequest(email: string) {
 
     return body;
 }
+
+export async function logoutRequest() {
+    return authFetch("/api/auth/logout", {
+        method: "POST",
+    });
+}
+

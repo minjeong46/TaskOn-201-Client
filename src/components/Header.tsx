@@ -13,6 +13,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Button from "./Button";
+import { logoutRequest } from "@/lib/auth/authApi";
+import { toast } from "sonner";
 
 interface HeaderProps {
     className?: string;
@@ -22,10 +24,29 @@ const Header = ({ className }: HeaderProps) => {
     const { user, isAuthenticated, clearAuth } = useAuthStore();
     const router = useRouter();
 
-    const logoutHandler = () => {
-        clearAuth();
-        router.refresh();
-        router.replace("/");
+    const logoutHandler = async () => {
+        try {
+            const res = await logoutRequest();
+
+            // 결과가 Error 리턴하면 다시 확인
+            if (!(res instanceof Response)) {
+                clearAuth();
+                router.replace("/login");
+                return;
+            }
+
+            if (res.status === 200) {
+                clearAuth();
+                router.replace("/");
+            } else if (res.status === 401) {
+                clearAuth();
+                router.replace("/login");
+            } else {
+                toast.error("로그아웃 실패하였습니다.");
+            }
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     return (
