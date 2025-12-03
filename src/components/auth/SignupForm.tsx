@@ -26,12 +26,20 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
         mutationFn: signupRequest,
         onSuccess: () => {
             toast.success("회원가입이 완료됐습니다, 로그인을 해주세요");
-            router.replace("/login");
+            setTimeout(() => {
+                if (typeof window !== "undefined") {
+                    window.location.href = "/login";
+                }
+            }, 1500);
         },
         onError: (error: ApiError) => {
             const status = error.status;
             if (status === 400) {
-                toast.error(error.data || error.message || "입력값 검증에 실패했습니다. 정보를 다시 확인해주세요.");
+                toast.error(
+                    error.data ||
+                        error.message ||
+                        "입력값 검증에 실패했습니다. 정보를 다시 확인해주세요."
+                );
             } else {
                 toast.error("회원가입에 실패하였습니다");
             }
@@ -214,11 +222,7 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
                             size="md"
                             fullWidth
                             className="mt-6"
-                            disabled={
-                                !agreedToTerms ||
-                                !name ||
-                                !password
-                            }
+                            disabled={!agreedToTerms || !name || !password}
                         />
                     </form>
 
