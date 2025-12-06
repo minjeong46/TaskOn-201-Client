@@ -16,18 +16,16 @@ import Button from "./Button";
 import { logoutRequest } from "@/lib/auth/authApi";
 import { toast } from "sonner";
 import useMe from "@/lib/user/useMe";
-import { Loader2 } from "lucide-react";
 
 interface HeaderProps {
     className?: string;
 }
 
 const Header = ({ className }: HeaderProps) => {
-    const { user, isAuthenticated, clearAuth } = useAuthStore();
-    const { data: me, isLoading, error } = useMe();
+    const { clearAuth } = useAuthStore();
+    const { data: me,  error } = useMe();
     const router = useRouter();
 
-    console.log(me);
 
     const logoutHandler = async () => {
         try {
