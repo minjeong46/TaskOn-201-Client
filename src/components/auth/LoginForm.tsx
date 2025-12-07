@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { toast } from "sonner";
@@ -9,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ApiError, loginRequest } from "@/lib/auth/authApi";
 import { useMutation } from "@tanstack/react-query";
+import Oauth2Button from "./Oauth2Button";
 
 interface LoginFormProps {
     isVisible: boolean;
@@ -54,10 +54,6 @@ export default function LoginForm({ isVisible }: LoginFormProps) {
         loginMutation.mutate({ email, password });
     };
 
-    const handleKakaoLogin = () => {
-        console.log("Kakao Login");
-    };
-
     return (
         <div
             className={`flex items-center justify-center lg:justify-start p-6 sm:p-8 lg:pl-12 xl:pl-16 bg-white transition-all duration-700 ease-in-out absolute left-0 w-full lg:w-1/2 h-full overflow-y-auto ${
@@ -78,7 +74,7 @@ export default function LoginForm({ isVisible }: LoginFormProps) {
                     className="space-y-4 sm:space-y-5"
                 >
                     <Input
-                        label="Email"
+                        label="이메일"
                         type="email"
                         placeholder="이메일을 입력하세요"
                         value={email}
@@ -88,7 +84,7 @@ export default function LoginForm({ isVisible }: LoginFormProps) {
                     />
 
                     <Input
-                        label="Password"
+                        label="비밀번호"
                         type="password"
                         placeholder="비밀번호를 입력하세요"
                         value={password}
@@ -120,22 +116,7 @@ export default function LoginForm({ isVisible }: LoginFormProps) {
                         </div>
                     </div>
 
-                    <div className="flex justify-center">
-                        <button
-                            type="button"
-                            onClick={handleKakaoLogin}
-                            className="mt-6 max-w-xs hover:opacity-90 transition-opacity cursor-pointer"
-                        >
-                            <Image
-                                src="/kakao_login_large_wide.png"
-                                alt="카카오 로그인"
-                                width={300}
-                                height={90}
-                                className="w-full h-auto"
-                                priority
-                            />
-                        </button>
-                    </div>
+                    <Oauth2Button />
                 </div>
             </div>
         </div>

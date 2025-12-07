@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { ApiError, checkEmailRequest, signupRequest } from "@/lib/auth/authApi";
+import Oauth2Button from "./Oauth2Button";
 
 interface SignupFormProps {
     isVisible: boolean;
@@ -66,7 +66,8 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
     };
 
     const handleKakaoLogin = () => {
-        console.log("Kakao Login");
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+        window.location.href = `${API_BASE_URL}/oauth2/authorization/kakao`;
     };
 
     const emailCheckMutation = useMutation({
@@ -238,22 +239,7 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
                             </div>
                         </div>
 
-                        <div className="flex justify-center">
-                            <button
-                                type="button"
-                                onClick={handleKakaoLogin}
-                                className="mt-6 max-w-xs hover:opacity-90 transition-opacity cursor-pointer"
-                            >
-                                <Image
-                                    src="/kakao_login_large_wide.png"
-                                    alt="카카오 로그인"
-                                    width={300}
-                                    height={90}
-                                    className="w-full h-auto"
-                                    priority
-                                />
-                            </button>
-                        </div>
+                        <Oauth2Button />
                     </div>
                 </div>
             </div>
