@@ -5,13 +5,18 @@ import ChangePasswordSection from "./ChangePasswordSection";
 import DeactivateAccountSection from "./DeactivateAccountSection";
 import ProfileSection from "./ProfileSection";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function MyPage() {
     const { user, accessToken, setAuth } = useAuthStore();
+    const router = useRouter();
 
-    if (!user) {
-        return <div>로딩 중...</div>;
-    }
+    useEffect(()=>{
+      if(!user) {
+        router.replace("/login")
+      }
+    },[user, router])
 
     return (
         <div className="min-h-screen">
