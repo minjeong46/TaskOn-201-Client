@@ -9,7 +9,6 @@ import {
   Plus,
   FolderKanban,
   Play,
-  Trash,
   Users,
   Settings,
 } from "lucide-react";
@@ -22,17 +21,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Project,
-  deleteProjectRequest,
-  getProjectsRequest,
-} from "@/lib/project/projectApi";
+import { Project, getProjectsRequest } from "@/lib/project/projectApi";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import {
   InviteTabContent,
   ProjectSettingsTabContent,
   OnlineMembersList,
+  MemberViewTabContent,
 } from "@/components/sidebar-components";
 
 export default function Sidebar() {
@@ -109,31 +105,11 @@ export default function Sidebar() {
     }
   }, [isAuthenticated]);
 
-  const handleDeleteProject = async (
-    projectId: number,
-    projectName: string
-  ) => {
-    try {
-      await deleteProjectRequest(projectId, projectName);
+  // 팀관리 모달 탭 구성 - 역할에 따라 다른 탭 표시
+  const isLeader = currentProject?.myRole === "LEADER";
 
-      // 삭제된 프로젝트가 현재 선택된 프로젝트인 경우 처리
-      if (currentProject?.projectId === projectId) {
-        const remainingProjects = projects.filter(
-          (p) => p.projectId !== projectId
-        );
-        setCurrentProject(
-          remainingProjects.length > 0 ? remainingProjects[0] : null
-        );
-      }
-
-      fetchProjects();
-    } catch (error) {
-      console.error("프로젝트 삭제 실패:", error);
-    }
-  };
-
-  // 팀관리 모달 탭 구성
-  const teamModalTabs: ProjectTeamModalTab[] = [
+  // 리더용 탭 (초대, 프로젝트 설정)
+  const leaderTabs: ProjectTeamModalTab[] = [
     {
       id: "invite",
       label: "Invite",
@@ -164,6 +140,24 @@ export default function Sidebar() {
       ),
     },
   ];
+
+  // 멤버용 탭 (읽기 전용 프로젝트 정보)
+  const memberTabs: ProjectTeamModalTab[] = [
+    {
+      id: "project",
+      label: "Project",
+      title: "프로젝트 정보",
+      icon: <FolderKanban className="w-4 h-4" />,
+      content: (
+        <MemberViewTabContent
+          projectId={currentProject?.projectId ?? null}
+          projectName={currentProject?.projectName || ""}
+        />
+      ),
+    },
+  ];
+
+  const teamModalTabs = isLeader ? leaderTabs : memberTabs;
 
   return (
     <aside className="w-80 h-screen bg-white flex flex-col border-r border-gray1">
@@ -207,20 +201,6 @@ export default function Sidebar() {
                   >
                     <FolderKanban className="w-4 h-4 mr-2 text-main" />
                     <span className="truncate">{project.projectName}</span>
-                    <button
-                      type="button"
-                      className="ml-auto p-1 rounded hover:bg-red-100"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleDeleteProject(
-                          project.projectId,
-                          project.projectName
-                        );
-                      }}
-                    >
-                      <Trash className="w-4 h-4 text-red-500 hover:text-red-700" />
-                    </button>
                   </DropdownMenuItem>
                 ))
               )}
@@ -287,9 +267,9 @@ export default function Sidebar() {
       <ProjectTeamModal
         isOpen={isTeamModalOpen}
         onClose={() => setIsTeamModalOpen(false)}
-        title="프로젝트 참여자 추가"
+        title={isLeader ? "프로젝트 참여자 추가" : "프로젝트 정보"}
         tabs={teamModalTabs}
-        defaultTabId="invite"
+        defaultTabId={isLeader ? "invite" : "project"}
       />
     </aside>
   );
