@@ -33,6 +33,7 @@ interface TaskEditorModalProps {
   onClose: () => void;
   projectId: number;
   onSuccess?: () => void;
+  defaultStatus?: TaskStatus;
 }
 
 const TaskEditorModal = ({
@@ -40,9 +41,10 @@ const TaskEditorModal = ({
   onClose,
   projectId,
   onSuccess,
+  defaultStatus,
 }: TaskEditorModalProps) => {
   const [title, setTitle] = useState("");
-  const [status, setStatus] = useState<TaskStatus | undefined>(undefined);
+  const [status, setStatus] = useState<TaskStatus | undefined>(defaultStatus);
   const [priority, setPriority] = useState<TaskPriority | undefined>(undefined);
   const [participantIds, setParticipantIds] = useState<number[]>([]);
   const [startDate, setStartDate] = useState("");
@@ -96,9 +98,16 @@ const TaskEditorModal = ({
   const isFormValid =
     title.trim() !== "" && status && priority && startDate && dueDate;
 
+  // defaultStatus가 변경되거나 모달이 열릴 때 상태 초기화
+  useEffect(() => {
+    if (isOpen && defaultStatus) {
+      setStatus(defaultStatus);
+    }
+  }, [isOpen, defaultStatus]);
+
   const resetForm = () => {
     setTitle("");
-    setStatus(undefined);
+    setStatus(defaultStatus);
     setPriority(undefined);
     setParticipantIds([]);
     setStartDate("");
