@@ -25,7 +25,7 @@ import { Project, getProjectsRequest } from "@/lib/project/projectApi";
 import { useProjectSidebar } from "@/lib/project/useProjectSidebar";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProjectStore } from "@/store/useProjectStore";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   InviteTabContent,
   ProjectSettingsTabContent,
@@ -35,6 +35,7 @@ import {
 
 export default function Sidebar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated } = useAuthStore();
   const {
     projects,
@@ -44,9 +45,17 @@ export default function Sidebar() {
     setCurrentProject,
     setIsLoading,
   } = useProjectStore();
-  const [activeMenu, setActiveMenu] = useState("Board");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+
+  // 현재 경로에 따라 activeMenu 결정
+  const getActiveMenu = () => {
+    if (pathname.startsWith("/backlog")) return "Backlog";
+    if (pathname.startsWith("/board")) return "Board";
+    if (pathname.startsWith("/inbox")) return "Inbox";
+    return "Board";
+  };
+  const activeMenu = getActiveMenu();
 
   // 사이드바 정보 조회 (useQuery)
   const { onlineUsers, isLoading: isSidebarLoading } = useProjectSidebar({
@@ -232,10 +241,7 @@ export default function Sidebar() {
             return (
               <button
                 key={item.name}
-                onClick={() => {
-                  setActiveMenu(item.name);
-                  router.push(item.path);
-                }}
+                onClick={() => router.push(item.path)}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative hover:bg-gray1 ${
                   activeMenu === item.name
                     ? "text-main font-bold"
