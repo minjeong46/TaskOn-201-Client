@@ -4,7 +4,6 @@ import { useState } from "react";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { ApiError, checkEmailRequest, signupRequest } from "@/lib/auth/authApi";
 import Oauth2Button from "./Oauth2LoginButton";
@@ -15,7 +14,6 @@ interface SignupFormProps {
 }
 
 export default function SignupForm({ isVisible }: SignupFormProps) {
-    const router = useRouter();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [isEmailCheck, setIsEmailCheck] = useState(false);

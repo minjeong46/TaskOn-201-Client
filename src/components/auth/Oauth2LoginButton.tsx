@@ -1,6 +1,5 @@
 import { redirectOAuth } from "@/lib/auth/ouath";
 import Image from "next/image";
-import React from "react";
 
 const Oauth2Button = () => {
 
