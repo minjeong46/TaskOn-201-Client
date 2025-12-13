@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { ApiError, checkEmailRequest, signupRequest } from "@/lib/auth/authApi";
 import Oauth2Button from "./Oauth2Button";
+import { isValidEmail, isValidPassword } from "@/lib/auth/validation";
 
 interface SignupFormProps {
     isVisible: boolean;
@@ -49,13 +50,11 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const passwordPattern =
-            /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{14,}$/;
         if (!isEmailCheck) {
             toast.error("이메일 중복 확인 후 진행해주세요");
             return;
         }
-        if (!passwordPattern.test(password)) {
+        if (!isValidPassword(password)) {
             toast.error(
                 "비밀번호는 14자 이상이며, 대문자/특수문자를 각각 필수로 1개 이상 포함해야 합니다"
             );
@@ -88,15 +87,13 @@ export default function SignupForm({ isVisible }: SignupFormProps) {
     });
 
     const handleEmailCheck = async () => {
-        const emailPattern =
-            /^[A-Za-z0-9_\.\-]+@[A-Za-z0-9\-]+\.[A-za-z0-9\-]+/;
         setIsEmailCheck(false);
 
         if (!email) {
             toast.error("이메일을 입력해주세요");
             return;
         }
-        if (emailPattern.test(email) === false) {
+        if (!isValidEmail(email)) {
             toast.info("이메일 양식에 맞게 입력해주세요");
             return;
         }
