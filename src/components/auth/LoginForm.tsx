@@ -4,7 +4,7 @@ import { useState } from "react";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { toast } from "sonner";
-import Oauth2Button from "./Oauth2LoginButton";
+import Oauth2LoginButton from "./Oauth2LoginButton";
 import { useLogin } from "@/lib/auth/useLogin";
 
 interface LoginFormProps {
@@ -90,7 +90,7 @@ export default function LoginForm({ isVisible }: LoginFormProps) {
                         </div>
                     </div>
 
-                    <Oauth2Button />
+                    <Oauth2LoginButton />
                 </div>
             </div>
         </div>

@@ -1,7 +1,8 @@
-import { redirectOAuth } from "@/lib/auth/ouath";
+
+import { redirectOAuth } from "@/lib/auth/oauth";
 import Image from "next/image";
 
-const Oauth2Button = () => {
+const Oauth2LoginButton = () => {
 
     return (
         <div className="flex gap-8 justify-center">
@@ -35,4 +36,4 @@ const Oauth2Button = () => {
     );
 };
 
-export default Oauth2Button;
+export default Oauth2LoginButton;
