@@ -4,7 +4,7 @@ import Button from "@/components/Button";
 import EditableProfile from "@/app/mypage/EditableProfile";
 import Input from "@/components/Input";
 import { ApiError } from "@/lib/auth/authApi";
-import { AuthUser, saveAuth } from "@/lib/auth/authStorage";
+import { AuthUser } from "@/lib/auth/authStorage";
 import { profileUpdateRequest } from "@/lib/user/userApi";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -50,6 +50,11 @@ const ProfileSection = ({
     });
 
     const handleSaveProfile = () => {
+        if (!name.trim() && !profileImageUrl) {
+            toast.error("변경할 내용을 입력해주세요.");
+            return;
+        }
+
         profileUpdateMutation.mutate({
             name: name,
             profileImageUrl: profileImageUrl,
