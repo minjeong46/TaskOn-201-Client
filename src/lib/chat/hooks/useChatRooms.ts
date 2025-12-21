@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getChatRooms } from "./chatApi";
-import { parseTime } from "./chatUtils";
+import { getChatRooms } from "../chatApi";
+import { parseTime } from "../chatUtils";
 
 export function useChatRooms() {
     return useQuery({

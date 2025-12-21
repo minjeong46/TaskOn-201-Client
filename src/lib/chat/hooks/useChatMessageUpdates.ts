@@ -2,7 +2,7 @@ import { Client, IMessage, StompSubscription } from "@stomp/stompjs";
 import { RefObject, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChatMessage } from "@/app/inbox/type";
-import { findSender } from "./chatUtils";
+import { findSender } from "../chatUtils";
 
 export function useChatMessageUpdates(
     clientRef: RefObject<Client | null>,
@@ -69,7 +69,6 @@ export function useChatMessageUpdates(
                     if (now - lastSyncRef.current > 800) {
                         // 0.8초에 1번만
                         lastSyncRef.current = now;
-
 
                         queryClient.invalidateQueries({
                             queryKey: ["chatMessages", chatRoomId],

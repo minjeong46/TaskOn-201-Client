@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Client, IMessage } from "@stomp/stompjs";
-import { ChatRoomData } from "../../app/inbox/type";
+import { ChatRoomData } from "../../../app/inbox/type";
 
 type RoomUpdatePayload = {
     roomId: number;

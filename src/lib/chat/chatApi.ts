@@ -2,17 +2,32 @@ import { ChatMessage, ChatRoomData } from "@/app/inbox/type";
 import { ApiError } from "../auth/authApi";
 import { authFetch } from "../auth/authFetch";
 
-// interface ChatMessageResponse {
-//     statusCode: number;
-//     message: string;
-//     data: ChatMessage[];
-// }
+export interface ChatUser {
+    userId: number;
+    name: string;
+    email: string;
+    profileImageUrl: string | null;
+}
 
-// interface SenderData {
-//     userId: number;
-//     name: string;
-//     profileImageUrl: string;
-// }
+interface SearchChatUsersPayload {
+    keyword: string;
+    page?: number;
+    size?: number;
+    sort?: string[];
+}
+
+export interface SearchChatUsersResponse {
+    statusCode: number;
+    message: string;
+    data: SearchChatUsersData;
+}
+
+export interface SearchChatUsersData {
+    content: ChatUser[];
+    size: number;
+    number: number;
+    hasNext: boolean;
+}
 
 // 메세지 리스트 조회
 export async function getChatMessageHistory(
@@ -44,4 +59,48 @@ export async function getChatRooms(): Promise<ChatRoomData[]> {
     }
 
     return body.data as ChatRoomData[];
+}
+
+// 채팅 사용자 검색
+export async function searchChatUsers({
+    keyword,
+    page = 0,
+    size = 20,
+}: SearchChatUsersPayload) {
+    const params = new URLSearchParams({
+        keyword,
+        page: page.toString(),
+        size: size.toString(),
+    });
+    const res = await authFetch(
+        `/api/chat/personal/search?${params.toString()}`,
+        { method: "GET" }
+    );
+
+    const body: SearchChatUsersResponse = await res.json();
+
+    if (!res.ok) {
+        const error = new ApiError(body.message || "사용자 검색에 실패");
+        error.status = res.status;
+        throw error;
+    }
+
+    return body.data;
+}
+
+// 채팅방을 만들고 개인 채팅방 가져오기
+export async function createOrGetPersonalChat(targetUserId: number) {
+    const res = await authFetch("/api/chat/personal", {
+        method: "POST",
+        body: JSON.stringify({ targetUserId }),
+    });
+
+    const body = await res.json();
+
+    if (!res.ok) {
+        const error = new ApiError(body.message || "개인 채팅방 만들기 실패");
+        error.status = res.status;
+        throw error;
+    }
+    return body as { chatRoomId: number };
 }

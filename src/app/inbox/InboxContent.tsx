@@ -5,18 +5,19 @@ import Button from "@/components/Button";
 import InboxSidebar from "./InboxSidebar";
 import MessageDetail from "./MessageDetail";
 import PageHeader from "@/components/PageHeader";
-import { useChatRooms } from "@/lib/chat/useChatRooms";
+import { useChatRooms } from "@/lib/chat/hooks/useChatRooms";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Client } from "@stomp/stompjs";
 import { createStompClient } from "@/lib/chat/stompClient";
-import { useChatRoomUpdates } from "@/lib/chat/useChatRoomUpdates";
-import { useChatMessageHistory } from "@/lib/chat/useChatMessageHistory";
+import { useChatRoomUpdates } from "@/lib/chat/hooks/useChatRoomUpdates";
+import { useChatMessageHistory } from "@/lib/chat/hooks/useChatMessageHistory";
 import { sendChatMessage } from "@/lib/chat/chatUtils";
-import { useChatMessageUpdates } from "@/lib/chat/useChatMessageUpdates";
+import { useChatMessageUpdates } from "@/lib/chat/hooks/useChatMessageUpdates";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChatRoomData } from "./type";
 import useMe from "@/lib/user/useMe";
-import { useChatErrors } from "@/lib/chat/useChatErrors";
+import { useChatErrors } from "@/lib/chat/hooks/useChatErrors";
+import SearchChatUsersModal from "@/components/chat/SearchChatUsersModal";
 
 export default function InboxContent() {
     const accessToken = useAuthStore((s) => s.accessToken);
@@ -26,6 +27,8 @@ export default function InboxContent() {
     const clientRef = useRef<Client | null>(null);
     const queryClient = useQueryClient();
     const { data: me } = useMe();
+    const [isSearchUserChatModalOpen, setIsSearchUserChatModalOpen] =
+        useState(false);
 
     // 방 목록 조회
     const {
@@ -126,12 +129,18 @@ export default function InboxContent() {
                 className="shrink-0 px-6 py-6 border-b border-gray2"
                 right={
                     <Button
-                        label="+ 채팅 생성"
+                        label="+ 개인 채팅방"
                         variant="primary"
                         size="sm"
                         className="px-4 py-2 rounded-2xl"
+                        onClick={() => setIsSearchUserChatModalOpen(true)}
                     />
                 }
+            />
+            <SearchChatUsersModal
+                isOpen={isSearchUserChatModalOpen}
+                onClose={() => setIsSearchUserChatModalOpen(false)}
+                onCreated={(chatRoomId) => setSelectedRoomId(chatRoomId)}
             />
             <div className="flex-1 flex min-h-0">
                 <InboxSidebar
