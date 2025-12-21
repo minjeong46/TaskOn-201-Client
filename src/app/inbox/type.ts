@@ -1,26 +1,25 @@
-export interface Participant {
-  id: number;
-  name: string;
-  avatar: string;
+interface ParticipantsData {
+    userId: number;
+    profileImageUrl: string;
+}
+export interface ChatRoomData {
+    chatRoomId: number;
+    roomName: string;
+    participants: ParticipantsData[];
+    lastMessage: string;
+    lastMessageTime: string;
+    unreadCount: number;
 }
 
-export interface Message {
-  id: number;
-  sender: string;
-  avatar: string;
-  subject: string;
-  preview: string;
-
-  time: string;
-  isRead: boolean;
-  participants: Participant[]; // 채팅 참여자 목록
-}
-
-export interface ThreadMessage {
-  id: number;
-  sender: string;
-  avatar: string;
-  content: string;
-  time: string;
-  isCurrentUser: boolean;
+export interface ChatMessage {
+    messageId: number;
+    chatRoomId: number;
+    sender: {
+        userId: number;
+        name: string;
+        profileImageUrl?: string | null;
+    };
+    content: string;
+    sentTime: string;
+    displayTime: string;
 }
