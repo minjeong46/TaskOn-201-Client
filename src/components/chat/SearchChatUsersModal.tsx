@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import UserInfoModal from "@/components/modal/UserInfoModal";
 import Profile from "@/components/Profile";
 import Button from "@/components/Button";
@@ -8,21 +8,27 @@ import useMe from "@/lib/user/useMe";
 import { useChatUserSearch } from "@/lib/chat/hooks/useChatUserSearch";
 import { usePersonalChat } from "@/lib/chat/hooks/usePersonalChat";
 import { useDebounce } from "@/lib/useDebounce";
+import { toast } from "sonner"; // 너 토스트 라이브러리에 맞춰 수정
+import { ChatRoomData } from "@/app/inbox/type"; // 경로 맞춰
+import { ApiError } from "@/lib/auth/authApi";
 
 export default function SearchChatUsersModal({
     isOpen,
     onClose,
     onCreated,
+    rooms,
+    myUserId,
 }: {
     isOpen: boolean;
     onClose: () => void;
     onCreated: (chatRoomId: number) => void;
+    rooms: ChatRoomData[];
+    myUserId?: number;
 }) {
     const { data: me } = useMe();
-    // 입력값
-    const [keywordInput, setKeywordInput] = useState("");
+    const realMyUserId = myUserId ?? me?.userId;
 
-    // 디바운스
+    const [keywordInput, setKeywordInput] = useState("");
     const keyword = useDebounce(keywordInput, 300);
 
     const {
@@ -40,20 +46,63 @@ export default function SearchChatUsersModal({
     const users = slice?.content ?? [];
     const hasSearched = keyword.trim().length > 0;
 
-    // 닫을 시
     const handleClose = useCallback(() => {
         setKeywordInput("");
         onClose();
     }, [onClose]);
 
-    // 유저 선택
-    const handlePickUser = (userId: number) => {
-        if (me?.userId && userId === me.userId) return;
+    // 상대 userId -> 기존 personal roomId 맵
+    const personalRoomByPartnerId = useMemo(() => {
+        const map = new Map<number, number>();
+        if (!realMyUserId) return map;
 
+        rooms
+            .filter((room) => room.chatType === "PERSONAL")
+            .forEach((room) => {
+                const partner = room.participants.find(
+                    (participant) => participant.userId !== realMyUserId
+                );
+                if (partner) map.set(partner.userId, room.chatRoomId);
+            });
+
+        return map;
+    }, [rooms, realMyUserId]);
+
+    const handlePickUser = (userId: number) => {
+        if (realMyUserId && userId === realMyUserId) return;
+
+        // 이미 개인방 있으면 기존방 이동
+        const existingRoomId = personalRoomByPartnerId.get(userId);
+        if (existingRoomId) {
+            toast.info(
+                "이미 1:1 채팅방이 있어요. 기존 채팅방으로 이동합니다.",
+                { duration: 3000 }
+            );
+            onCreated(existingRoomId);
+            handleClose();
+            return;
+        }
+
+        // 없으면 생성
         personalChat.mutate(userId, {
             onSuccess: ({ chatRoomId }) => {
                 onCreated(chatRoomId);
                 handleClose();
+            },
+            onError: (error: ApiError) => {
+                const status = error.status;
+
+                if (status === 400) {
+                    toast.error("잘못된 요청입니다");
+                } else if (status === 401) {
+                    toast.error("인증이 만료되었습니다");
+                } else if (status === 500) {
+                    toast.error("네트워크 오류가 발생했습니다");
+                } else {
+                    toast.error(
+                        error.message || "채팅방 생성 중 오류가 발생했습니다."
+                    );
+                }
             },
         });
     };
@@ -104,28 +153,43 @@ export default function SearchChatUsersModal({
                         )}
 
                     <div className="flex flex-col">
-                        {users.map((user) => (
-                            <button
-                                key={user.userId}
-                                onClick={() => handlePickUser(user.userId)}
-                                disabled={loading}
-                                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray1/40 text-left disabled:opacity-50"
-                            >
-                                <Profile
-                                    size="sm"
-                                    imageUrl={user.profileImageUrl ?? undefined}
-                                    userName={user.name}
-                                />
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-medium text-gray5">
-                                        {user.name}
-                                    </span>
-                                    <span className="text-xs text-gray3">
-                                        {user.email}
-                                    </span>
-                                </div>
-                            </button>
-                        ))}
+                        {users.map((user) => {
+                            const existingRoomId = personalRoomByPartnerId.get(
+                                user.userId
+                            );
+
+                            return (
+                                <button
+                                    key={user.userId}
+                                    onClick={() => handlePickUser(user.userId)}
+                                    disabled={loading}
+                                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray1/40 text-left disabled:opacity-50 cursor-pointer"
+                                >
+                                    <Profile
+                                        size="sm"
+                                        imageUrl={
+                                            user.profileImageUrl ?? undefined
+                                        }
+                                        userName={user.name}
+                                    />
+
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-sm font-medium text-gray5 truncate">
+                                            {user.name}
+                                        </span>
+                                        <span className="text-xs text-gray3 truncate">
+                                            {user.email}
+                                        </span>
+                                    </div>
+
+                                    {existingRoomId && (
+                                        <span className="ml-auto text-xs px-2 py-1 rounded-full bg-gray1 text-gray4">
+                                            이미 대화 중
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>

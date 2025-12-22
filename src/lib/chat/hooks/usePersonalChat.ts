@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createOrGetPersonalChat } from "@/lib/chat/chatApi";
 
 export function usePersonalChat() {
-  const qc = useQueryClient();
+  const queryclient = useQueryClient();
 
   return useMutation({
     mutationFn: (targetUserId: number) =>
@@ -11,7 +11,7 @@ export function usePersonalChat() {
     onSuccess: async () => {
       
       // 채팅방 리스트 최신화
-      await qc.invalidateQueries({ queryKey: ["chatRooms"] });
+      await queryclient.invalidateQueries({ queryKey: ["chatRooms"] });
     },
   });
 }

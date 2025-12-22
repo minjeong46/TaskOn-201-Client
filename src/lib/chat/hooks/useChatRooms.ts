@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getChatRooms } from "../chatApi";
-import { parseTime } from "../chatUtils";
+import { sortByLastMessageAtDesc } from "../chatUtils";
 
 export function useChatRooms() {
     return useQuery({
@@ -8,16 +8,10 @@ export function useChatRooms() {
         queryFn: getChatRooms,
         staleTime: 10_000,
 
-        // 채팅방 리스트 폴링
+        // 폴링 -> 실시간 채팅방 리스트
         refetchInterval: 3000,
-        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: false,
 
-        select: (rooms) => {
-            return [...rooms].sort((a, b) => {
-                const aLastTime = parseTime(a.lastMessageTime);
-                const bLastTime = parseTime(b.lastMessageTime);
-                return bLastTime - aLastTime;
-            });
-        },
+        select: (rooms) => sortByLastMessageAtDesc(rooms),
     });
 }

@@ -1,69 +1,97 @@
+import { Client, IMessage, StompSubscription } from "@stomp/stompjs";
+import { RefObject, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { Client, IMessage } from "@stomp/stompjs";
-import { ChatRoomData } from "../../../app/inbox/type";
+import { ChatRoomData } from "@/app/inbox/type";
 
-type RoomUpdatePayload = {
-    roomId: number;
+type RoomListUpdatePayload = {
+    chatRoomId: number;
     lastMessage: string;
     lastMessageTime: string;
-    unreadCount?: number;
-    senderId: number;
+    lastMessageAt?: string;
 };
 
-// 채팅방 리스트 구독
 export function useChatRoomUpdates(
-    client: Client | null,
+    clientRef: RefObject<Client | null>,
     connected: boolean,
     selectedRoomId: number | null
 ) {
     const queryClient = useQueryClient();
 
+    const selectedRoomIdRef = useRef<number | null>(null);
+    const subscriptionRef = useRef<StompSubscription | null>(null);
+
     useEffect(() => {
-        if (!client || !connected) return;
+        selectedRoomIdRef.current = selectedRoomId;
+    }, [selectedRoomId]);
 
-        console.log("SUBSCRIBE rooms list => /topic/chat/rooms");
+    // disconnected 되면 subscriptionRef를 반드시 비워서 다음 connect에서 재구독 가능하게
+    useEffect(() => {
+        if (connected) return;
 
-        // 채팅 구독
-        const sub = client.subscribe(`/topic/chat/rooms/`, (msg: IMessage) => {
-            const payload: RoomUpdatePayload = JSON.parse(msg.body);
+        if (subscriptionRef.current) {
+            try {
+                subscriptionRef.current.unsubscribe();
+            } catch {}
+            subscriptionRef.current = null;
+        }
+    }, [connected]);
 
-            console.log("1", payload);
+    useEffect(() => {
+        const client = clientRef.current;
+        if (!client || !connected || !selectedRoomId) return;
 
-            // 새로 업데이트
-            queryClient.setQueryData<ChatRoomData[]>(["chatRooms"], (prev) => {
-                if (!prev) return prev;
+        if (subscriptionRef.current) return;
 
-                console.log("2", payload);
+        console.log("🟢 SUBSCRIBE /user/queue/chat/rooms");
 
-                const next = prev.map((room) => {
-                    if (room.chatRoomId !== payload.roomId) return room;
+        subscriptionRef.current = client.subscribe(
+            "/user/queue/chat/rooms",
+            (msg: IMessage) => {
+                const payload: RoomListUpdatePayload = JSON.parse(msg.body);
+                console.log("🟡 ROOM-LIST EVENT", payload);
 
-                    const isSelected = selectedRoomId === payload.roomId;
+                queryClient.setQueryData<ChatRoomData[]>(
+                    ["chatRooms"],
+                    (prev) => {
+                        if (!prev) return prev;
 
-                    return {
-                        ...room,
-                        lastMessage: payload.lastMessage,
-                        lastMessageTime: isSelected
-                            ? "방금 전"
-                            : payload.lastMessageTime ?? room.lastMessageTime,
-                        unreadCount: room.unreadCount,
-                    };
-                });
+                        const idx = prev.findIndex(
+                            (r) => r.chatRoomId === payload.chatRoomId
+                        );
 
-                next.sort((a, b) => {
-                    const aLastTime = a.lastMessageTime
-                        ? new Date(a.lastMessageTime).getTime()
-                        : 0;
-                    const bLastTime = b.lastMessageTime
-                        ? new Date(b.lastMessageTime).getTime()
-                        : 0;
-                    return bLastTime - aLastTime;
-                });
+                        if (idx === -1) {
+                            queryClient.invalidateQueries({
+                                queryKey: ["chatRooms"],
+                            });
+                            return prev;
+                        }
 
-                return next;
-            });
-        });
-        return () => sub.unsubscribe();
-    }, [client, connected, selectedRoomId, queryClient]);
+                        const room = prev[idx];
+                        const isSelected =
+                            selectedRoomIdRef.current === payload.chatRoomId;
+
+                        const updated: ChatRoomData = {
+                            ...room,
+                            lastMessage: payload.lastMessage,
+                            lastMessageTime: isSelected
+                                ? "방금 전"
+                                : payload.lastMessageTime,
+                            lastMessageAt:
+                                payload.lastMessageAt ?? room.lastMessageAt,
+                        };
+
+                        const next = prev.slice();
+                        next.splice(idx, 1);
+                        next.unshift(updated);
+                        return next;
+                    }
+                );
+            }
+        );
+
+        return () => {
+            subscriptionRef.current?.unsubscribe();
+            subscriptionRef.current = null;
+        };
+    }, [clientRef, connected, queryClient, selectedRoomId]);
 }

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import type { Client, IMessage, StompSubscription } from "@stomp/stompjs";
 import { toast } from "sonner";
 
-export type StompErrorResponse = {
+export interface StompErrorResponse {
     code?: string;
     message?: string;
     roomId?: number;

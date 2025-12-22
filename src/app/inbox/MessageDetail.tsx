@@ -6,7 +6,7 @@ import { ChatMessage, ChatRoomData } from "./type";
 import MessageThread from "./MessageThread";
 import Profile from "@/components/Profile";
 import useMe from "@/lib/user/useMe";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 interface MessageDetailProps {
     room: ChatRoomData;
@@ -44,23 +44,7 @@ const MessageDetail = ({
         }
     };
 
-    const participantMap = useMemo(() => {
-        const map = new Map<number, { name?: string; imageUrl?: string }>();
-
-        // 메시지에서 sender 정보 수집
-        messages.forEach((msg) => {
-            if (msg.sender?.userId) {
-                map.set(msg.sender.userId, {
-                    name: msg.sender.name,
-                    imageUrl: msg.sender.profileImageUrl ?? undefined,
-                });
-            }
-        });
-
-        return map;
-    }, [messages]);
-
-    if (isLoading) return <div>메세지 불러오는 중...</div>;
+    if (isLoading) return <div className="p-2 text-sm text-gray5">메세지 불러오는 중...</div>;
 
     return (
         <div className="flex-1 flex flex-col min-h-0">
@@ -73,26 +57,20 @@ const MessageDetail = ({
                             key={me.userId}
                             imageUrl={me.profileImageUrl ?? undefined}
                             size="sm"
+                            className="text-sm"
+                            userName={me.name.charAt(0)}
                         />
                     )}
                     {/* 다른 참가자들 */}
-                    {room.participants?.map((participant) => {
-                        const cached = participantMap.get(participant.userId);
-
-                        return (
-                            <Profile
-                                key={participant.userId}
-                                imageUrl={
-                                    participant.profileImageUrl ??
-                                    cached?.imageUrl
-                                }
-                                size="sm"
-                                userName={
-                                    cached?.name ?? `User ${participant.userId}`
-                                }
-                            />
-                        );
-                    })}
+                    {room.participants?.map((participant) => (
+                        <Profile
+                            key={participant.userId}
+                            imageUrl={participant.profileImageUrl}
+                            size="sm"
+                            className="text-sm"
+                            userName={participant.name.charAt(0)}
+                        />
+                    ))}
                 </div>
             </div>
 

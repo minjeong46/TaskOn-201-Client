@@ -26,8 +26,8 @@ const MessageThread = ({ messages }: MessageThreadProps) => {
                         {!isMe && (
                             <div className="flex items-start gap-2 max-w-[70%]">
                                 <Profile
-                                    className="w-8 h-8 shrink-0"
-                                    userName={msg.sender?.name}
+                                    className="w-8 h-8 shrink-0 text-sm"
+                                    userName={msg.sender?.name.charAt(0)}
                                     imageUrl={msg.sender?.profileImageUrl}
                                 />
 
@@ -58,8 +58,6 @@ const MessageThread = ({ messages }: MessageThreadProps) => {
                                         {msg.content}
                                     </p>
                                 </div>
-
-                                {/* 시간(아래로 분리) */}
                                 <span className="mt-1 text-[11px] text-gray3">
                                     {formatChatRoomTime(msg.displayTime)}
                                 </span>

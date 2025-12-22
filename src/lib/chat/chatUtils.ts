@@ -1,22 +1,4 @@
-import { ChatMessage, ChatRoomData } from "@/app/inbox/type";
-import { Client } from "@stomp/stompjs";
-import { debounce } from "lodash";
-import { RefObject } from "react";
-
-// 메시지 보내기 STOMP
-export function sendChatMessage(
-    clientRef: RefObject<Client | null>,
-    chatRoomId: number,
-    content: string
-) {
-    const client = clientRef.current;
-    if (!client || !client.connected) throw new Error("STOMP 연결 실패");
-
-    client.publish({
-        destination: `/app/chat/rooms/${chatRoomId}`,
-        body: JSON.stringify({ content }), // 매핑
-    });
-}
+import { ChatMessage } from "@/app/inbox/type";
 
 // sender 찾기 -> 메세지 실시간 전송시 senderId 값만 존재하므로 Rest message 조회에서 찾도록
 export function findSender(
@@ -25,18 +7,6 @@ export function findSender(
 ) {
     return messages?.find((m) => m.sender.userId === senderId)?.sender;
 }
-
-// sender 가 해당하는 방 찾기
-// export function findSenderFromRoom(room: ChatRoomData, senderId: number) {
-//     const p = room.participants.find((p) => p.userId === senderId);
-//     if (!p) return null;
-
-//     return {
-//         userId: p.userId,
-//         name: "알 수 없음", // ← 히스토리 없을 때만
-//         profileImageUrl: p.profileImageUrl,
-//     };
-// }
 
 // 채팅방 리스트 조회 날짜 변환용
 // value: "251113T231154"
@@ -56,7 +26,7 @@ export const parseCompactDateTime = (value: string): Date | null => {
 };
 
 // 24시간이 넘어가면 "방금전" -> 2025-12-21 형태로
-export const formatChatRoomTime = (value: string) => {
+export const formatChatRoomTime = (value: string | null) => {
     if (!value) return "";
 
     // 그냥 문자열이면 그대로 사용 ("방금전","10분 전"...)
@@ -83,22 +53,17 @@ export const formatChatRoomTime = (value: string) => {
     return `${y}-${mo}-${d}`;
 };
 
-// 시간 계산(sort 용)
-export function parseTime(value?: string) {
-    if (!value) return 0;
-
-    if (value === "방금 전") return Date.now();
-
-    const minMatch = value.match(/(\d+)분 전/);
-    if (minMatch) {
-        return Date.now() - Number(minMatch[1]) * 60 * 1000;
-    }
-
-    const t = Date.parse(value);
-    return isNaN(t) ? 0 : t;
+export function sortByLastMessageAtDesc<T extends { lastMessageAt?: string | null }>(
+  rooms: T[]
+) {
+  return [...rooms].sort((a, b) => {
+    const aTime = a.lastMessageAt ? Date.parse(a.lastMessageAt) : 0;
+    const bTime = b.lastMessageAt ? Date.parse(b.lastMessageAt) : 0;
+    return bTime - aTime;
+  });
 }
 
 // 룸 최신 반영 -> 폴링 시 사용
-export const invalidateRooms = debounce((queryClient) => {
-    queryClient.invalidateQueries({ queryKey: ["chatRooms"] });
-}, 300);
+// export const invalidateRooms = debounce((queryClient) => {
+//     queryClient.invalidateQueries({ queryKey: ["chatRooms"] });
+// }, 300);

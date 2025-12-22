@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/Button";
 import InboxSidebar from "./InboxSidebar";
 import MessageDetail from "./MessageDetail";
@@ -9,15 +9,14 @@ import { useChatRooms } from "@/lib/chat/hooks/useChatRooms";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Client } from "@stomp/stompjs";
 import { createStompClient } from "@/lib/chat/stompClient";
-import { useChatRoomUpdates } from "@/lib/chat/hooks/useChatRoomUpdates";
 import { useChatMessageHistory } from "@/lib/chat/hooks/useChatMessageHistory";
-import { sendChatMessage } from "@/lib/chat/chatUtils";
 import { useChatMessageUpdates } from "@/lib/chat/hooks/useChatMessageUpdates";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChatRoomData } from "./type";
 import useMe from "@/lib/user/useMe";
 import { useChatErrors } from "@/lib/chat/hooks/useChatErrors";
 import SearchChatUsersModal from "@/components/chat/SearchChatUsersModal";
+import { sendChatMessage } from "@/lib/chat/stompSendChat";
 
 export default function InboxContent() {
     const accessToken = useAuthStore((s) => s.accessToken);
@@ -39,6 +38,8 @@ export default function InboxContent() {
 
     // stomp 연결
     useEffect(() => {
+        if (!accessToken) return;
+
         const stompClient = createStompClient({
             accessToken,
             onConnect: () => {
@@ -46,6 +47,9 @@ export default function InboxContent() {
             },
             onDisconnect: () => {
                 setConnected(false);
+            },
+            onStompError: (frame) => {
+                console.log("❌ STOMP ERROR", frame.headers, frame.body);
             },
         });
 
@@ -59,12 +63,26 @@ export default function InboxContent() {
         };
     }, [accessToken]);
 
+    const clickLockRef = useRef(false);
+
+    // 중복 클릭 방지
+    const handleRoomClick = useCallback((roomId: number) => {
+        if (clickLockRef.current) return;
+
+        clickLockRef.current = true;
+        setSelectedRoomId((prev) => (prev === roomId ? prev : roomId));
+
+        window.setTimeout(() => {
+            clickLockRef.current = false;
+        }, 150);
+    }, []);
+
     // 에러 구독
     useChatErrors(clientRef, connected);
 
     // 업데이트 구독
-    // useChatRoomUpdates(client, connected, selectedRoomId);
-    // useChatMessageUpdates(client, selectedRoomId, connected);
+    // useChatRoomUpdates(clientRef, connected, selectedRoomId);
+
     const { isSubscribed } = useChatMessageUpdates(
         clientRef,
         selectedRoomId,
@@ -85,6 +103,10 @@ export default function InboxContent() {
     const handleSendReply = () => {
         if (!selectedRoomId) return;
         if (!replyContent.trim()) return;
+
+        const client = clientRef.current;
+        if (!client || !client.connected) return;
+
         if (!isSubscribed()) return;
 
         sendChatMessage(clientRef, selectedRoomId, replyContent);
@@ -94,7 +116,7 @@ export default function InboxContent() {
             if (!prev) return prev;
 
             const nowLabel = "방금 전";
-            const now = Date.now();
+            const now = new Date().toISOString();
 
             const next = prev.map((room) =>
                 room.chatRoomId === selectedRoomId
@@ -109,11 +131,11 @@ export default function InboxContent() {
             );
 
             // 최신 메시지 방이 위로 올라오게
-            next.sort((a, b) => {
-                const at = a.chatRoomId === selectedRoomId ? 1 : 0;
-                const bt = b.chatRoomId === selectedRoomId ? 1 : 0;
-                return bt - at;
-            });
+            const idx = next.findIndex((r) => r.chatRoomId === selectedRoomId);
+            if (idx > 0) {
+                const [picked] = next.splice(idx, 1);
+                next.unshift(picked);
+            }
 
             return next;
         });
@@ -141,12 +163,15 @@ export default function InboxContent() {
                 isOpen={isSearchUserChatModalOpen}
                 onClose={() => setIsSearchUserChatModalOpen(false)}
                 onCreated={(chatRoomId) => setSelectedRoomId(chatRoomId)}
+                rooms={rooms}
+                myUserId={me?.userId}
             />
             <div className="flex-1 flex min-h-0">
                 <InboxSidebar
                     rooms={rooms}
                     selectedRoomId={selectedRoomId}
-                    onRoomClick={(room) => setSelectedRoomId(room.chatRoomId)}
+                    onRoomClick={(room) => handleRoomClick(room.chatRoomId)}
+                    myUserId={me?.userId}
                 />
 
                 {selectedRoom ? (

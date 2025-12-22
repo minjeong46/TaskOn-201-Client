@@ -1,6 +1,7 @@
 import { ChatMessage, ChatRoomData } from "@/app/inbox/type";
 import { ApiError } from "../auth/authApi";
 import { authFetch } from "../auth/authFetch";
+import { TaskPriority } from "../task/taskApi";
 
 export interface ChatUser {
     userId: number;
@@ -27,6 +28,32 @@ export interface SearchChatUsersData {
     size: number;
     number: number;
     hasNext: boolean;
+}
+
+export interface ChatSearchResponse {
+    statusCode: number;
+    message: string;
+    data: {
+        chatRooms: ChatRoomData[];
+    };
+}
+
+export interface ChatSearchUser {
+    userId: number;
+    name: string;
+    profileImageUrl: string | null;
+}
+
+export interface ChatSearchTask {
+    taskId: number;
+    projectId: number;
+    taskTitle: string;
+    priority: TaskPriority;
+}
+
+export interface ChatSearchData {
+    users: ChatSearchUser[];
+    tasks: ChatSearchTask[];
 }
 
 // 메세지 리스트 조회
@@ -103,4 +130,24 @@ export async function createOrGetPersonalChat(targetUserId: number) {
         throw error;
     }
     return body as { chatRoomId: number };
+}
+
+// 채팅 검색
+export async function searchChat(keyword: string): Promise<ChatRoomData[]> {
+    const res = await authFetch(
+        `/api/chat/search?keyword=${encodeURIComponent(keyword)}`,
+        {
+            method: "GET",
+        }
+    );
+
+    const body: ChatSearchResponse = await res.json();
+
+    if (!res.ok) {
+        const error = new ApiError(body.message || "채팅 검색 실패");
+        error.status = res.status;
+        throw error;
+    }
+
+    return body.data.chatRooms;
 }

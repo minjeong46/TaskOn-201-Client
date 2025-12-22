@@ -1,18 +1,20 @@
 import { formatChatRoomTime } from "@/lib/chat/chatUtils";
 import { ChatRoomData } from "./type";
+import ChatRoomIcon from "./ChatRoomIcon";
 
 interface MessageListItemProps {
     room: ChatRoomData;
     isSelected: boolean;
     onClick: () => void;
+    myUserId: number | undefined;
 }
 
 const MessageListItem = ({
     room,
     isSelected,
     onClick,
+    myUserId,
 }: MessageListItemProps) => {
-    // console.log(room);
     return (
         <div
             onClick={onClick}
@@ -21,13 +23,21 @@ const MessageListItem = ({
             }`}
         >
             <div className="flex items-start gap-3">
-
+                <ChatRoomIcon room={room} myUserId={myUserId} />
                 {/* 메시지 정보 */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-main2 text-sm">
-                            {room.roomName}
-                        </span>
+                        <div>
+                            <span className="font-semibold text-main2 text-sm">
+                                {room.roomName}
+                            </span>{" "}
+                            {room.chatType === "PERSONAL" && (
+                                <span className="text-xs text-gray3">
+                                    ( 1:1 채팅방 )
+                                </span>
+                            )}
+                        </div>
+
                         <span className="text-xs text-gray3">
                             {formatChatRoomTime(room.lastMessageTime)}
                         </span>
