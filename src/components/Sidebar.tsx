@@ -59,7 +59,11 @@ export default function Sidebar() {
   const activeMenu = getActiveMenu();
 
   // 사이드바 정보 조회 (useQuery)
-  const { onlineUsers, isLoading: isSidebarLoading } = useProjectSidebar({
+  const {
+    onlineUsers,
+    unreadChatCount,
+    isLoading: isSidebarLoading,
+  } = useProjectSidebar({
     projectId: currentProject?.projectId ?? null,
     enabled: isAuthenticated && !!currentProject?.projectId,
   });
@@ -266,6 +270,11 @@ export default function Sidebar() {
               >
                 <IconComponent className="w-5 h-5" />
                 <span className="text-sm font-medium">{item.name}</span>
+                {item.name === "Inbox" && unreadChatCount > 0 && (
+                  <span className="ml-auto bg-sub2 text-white text-xs font-bold p-0.5 rounded-full min-w-[20px] text-center">
+                    {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                  </span>
+                )}
               </button>
             );
           })}
