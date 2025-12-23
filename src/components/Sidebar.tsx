@@ -40,6 +40,7 @@ export default function Sidebar() {
   const {
     projects,
     currentProject,
+    currentProjectId,
     isLoading,
     setProjects,
     setCurrentProject,
@@ -58,7 +59,11 @@ export default function Sidebar() {
   const activeMenu = getActiveMenu();
 
   // 사이드바 정보 조회 (useQuery)
-  const { onlineUsers, isLoading: isSidebarLoading } = useProjectSidebar({
+  const {
+    onlineUsers,
+    unreadChatCount,
+    isLoading: isSidebarLoading,
+  } = useProjectSidebar({
     projectId: currentProject?.projectId ?? null,
     enabled: isAuthenticated && !!currentProject?.projectId,
   });
@@ -92,8 +97,23 @@ export default function Sidebar() {
     try {
       const response = await getProjectsRequest();
       setProjects(response.data);
+
       if (response.data.length > 0 && !currentProject) {
-        setCurrentProject(response.data[0]);
+        // 저장된 projectId가 있으면 해당 프로젝트 찾기
+        if (currentProjectId) {
+          const savedProject = response.data.find(
+            (p) => p.projectId === currentProjectId
+          );
+          if (savedProject) {
+            setCurrentProject(savedProject);
+          } else {
+            // 저장된 프로젝트가 목록에 없으면 첫 번째 프로젝트 선택
+            setCurrentProject(response.data[0]);
+          }
+        } else {
+          // 저장된 projectId가 없으면 첫 번째 프로젝트 선택
+          setCurrentProject(response.data[0]);
+        }
       }
     } catch (error) {
       console.error("프로젝트 목록 조회 실패:", error);
@@ -250,6 +270,11 @@ export default function Sidebar() {
               >
                 <IconComponent className="w-5 h-5" />
                 <span className="text-sm font-medium">{item.name}</span>
+                {item.name === "Inbox" && unreadChatCount > 0 && (
+                  <span className="ml-auto bg-sub2 text-white text-xs font-bold p-0.5 rounded-full min-w-[20px] text-center">
+                    {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                  </span>
+                )}
               </button>
             );
           })}

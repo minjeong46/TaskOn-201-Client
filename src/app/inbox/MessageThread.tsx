@@ -1,33 +1,100 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ThreadMessage } from "./type";
+"use client";
+
+import { ChatMessage } from "./type";
+import useMe from "@/lib/user/useMe";
+import Profile from "@/components/Profile";
+import { formatChatRoomTime } from "@/lib/chat/chatUtils";
+import { useState } from "react";
+import UserProfileModal from "@/components/chat/ChatUserProfileModal";
 
 interface MessageThreadProps {
-  messages: ThreadMessage[];
+    messages: ChatMessage[];
 }
 
 const MessageThread = ({ messages }: MessageThreadProps) => {
-  return (
-    <div className="">
-      {messages.map((msg) => (
-        <div key={msg.id} className="flex items-start gap-3 mb-4">
-          <Avatar className="w-8 h-8">
-            <AvatarFallback className="bg-gray-200 text-main2 text-xs font-medium">
-              {msg.avatar}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-main2 text-sm">
-                {msg.sender}
-              </span>
-              <span className="text-xs text-gray3">{msg.time}</span>
-            </div>
-            <p className="text-sm text-gray5">{msg.content}</p>
-          </div>
+    const { data: me } = useMe();
+    const [profileOpen, setProfileOpen] = useState(false);
+    const [targetUserId, setTargetUserId] = useState<number | null>(null);
+
+    const openProfile = (userId?: number | null) => {
+        if (!userId) return; // senderId 없으면 무시
+        setTargetUserId(userId);
+        setProfileOpen(true);
+    };
+
+    const closeProfile = () => {
+        setProfileOpen(false);
+        setTargetUserId(null);
+    };
+
+    return (
+        <div className="flex flex-col min-h-full justify-end">
+            {messages.map((msg) => {
+                const isMe = msg.sender?.userId === me?.userId;
+                const displayName = msg.sender?.name ?? "탈퇴한 사용자";
+                const initial = displayName.charAt(0);
+
+                return (
+                    <div
+                        key={msg.messageId}
+                        className={`flex mb-4 ${
+                            isMe ? "justify-end" : "justify-start"
+                        }`}
+                    >
+                        {/* 상대방 */}
+                        {!isMe && (
+                            <div className="flex items-start gap-2 max-w-[70%]">
+                                <button onClick={() => openProfile(msg.sender?.userId)}>
+                                    <Profile
+                                        className="w-8 h-8 shrink-0 text-sm"
+                                        userName={initial}
+                                        imageUrl={msg.sender?.profileImageUrl}
+                                    />
+                                </button>
+
+                                <UserProfileModal
+                                    isOpen={profileOpen}
+                                    onClose={closeProfile}
+                                    userId={targetUserId}
+                                />
+
+                                <div className="flex flex-col items-start">
+                                    <span className="mb-1 text-sm text-gray5">
+                                        {displayName}
+                                    </span>
+
+                                    <div className="bg-gray1/30 py-2.5 px-4 rounded-2xl">
+                                        <p className="text-sm text-gray5 whitespace-pre-wrap wrap-break-words">
+                                            {msg.content}
+                                        </p>
+                                    </div>
+
+                                    <span className="mt-1 ml-2 text-[11px] text-gray3">
+                                        {formatChatRoomTime(msg.displayTime)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 나 */}
+                        {isMe && (
+                            <div className="flex flex-col items-end max-w-[70%]">
+                                {/* 말풍선(내용만) */}
+                                <div className="bg-main/10 py-2.5 px-4 rounded-2xl">
+                                    <p className="text-sm text-gray5 whitespace-pre-wrap wrap-break-words">
+                                        {msg.content}
+                                    </p>
+                                </div>
+                                <span className="mt-1 text-[11px] text-gray3">
+                                    {formatChatRoomTime(msg.displayTime)}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
         </div>
-      ))}
-    </div>
-  );
+    );
 };
 
 export default MessageThread;

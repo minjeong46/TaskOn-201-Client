@@ -1,9 +1,11 @@
+"use client"
+
 import {
     AuthUser,
     getAccessToken,
     getAuthUser,
     saveAuth,
-    clearAuth as clearAuthStorage
+    clearAuth as clearAuthStorage,
 } from "@/lib/auth/authStorage";
 import { create } from "zustand";
 

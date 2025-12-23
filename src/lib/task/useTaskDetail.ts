@@ -1,3 +1,5 @@
+"use client"
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteTaskRequest, getTaskDetail } from "./taskApi";
 import { toast } from "sonner";
@@ -15,7 +17,11 @@ export const useTaskDetail = ({
 }: UseTaskDetailParams) => {
   const queryClient = useQueryClient();
 
-  const { data: taskResponse, isLoading } = useQuery({
+  const {
+    data: taskResponse,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["taskDetail", projectId, taskId],
     queryFn: () => getTaskDetail(projectId, taskId),
     enabled: enabled && !!projectId && !!taskId,
@@ -33,7 +39,12 @@ export const useTaskDetail = ({
       });
       onSuccess?.();
     } catch (error) {
-      console.error("Task 삭제 실패:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Task 삭제 실패";
+      toast.error(errorMessage);
+      await queryClient.invalidateQueries({
+        queryKey: ["boardTasks", projectId],
+      });
     }
   };
 
@@ -41,5 +52,6 @@ export const useTaskDetail = ({
     task,
     isLoading,
     deleteTask,
+    refetch,
   };
 };
