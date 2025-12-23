@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { TaskDetailData } from "@/lib/task/taskApi";
 import CommentInput from "./comment-components/CommentInput";
@@ -48,8 +48,14 @@ const Comment = ({ projectId, taskId, task }: CommentProps) => {
         task?.participants?.some((p) => p.userId === me?.userId);
 
     if (!me) return <></>;
-    if (isLoading) return <div>comment 불러오는중...</div>;
-    if (isError) return <div>comment를 불러오는데 실패하였습니다, 다시 task를 열어주세요</div>;
+    if (isLoading)
+        return <div className="p-2 text-sm">comment 불러오는중...</div>;
+    if (isError)
+        return (
+            <div className="p-2 text-sm">
+                comment를 읽어오는데 실패하였습니다, 담당자에게 문의해주세요
+            </div>
+        );
 
     return (
         <div>

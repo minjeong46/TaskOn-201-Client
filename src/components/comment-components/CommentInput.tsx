@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import Profile from "../Profile";
 import Button from "../Button";
@@ -24,7 +24,7 @@ const CommentInput = ({
 
     return (
         <div className="py-4 grid grid-cols-[40px_1fr_50px] gap-x-4 items-start">
-            <Profile size="sm" imageUrl={me?.profileImageUrl ?? ""} />
+            <Profile size="sm" imageUrl={me?.profileImageUrl ?? ""} userName={me.name.charAt(0)} />
             <textarea
                 id="commentInput"
                 name="commentInput"
